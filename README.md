@@ -5,6 +5,7 @@ web-demo：前端WEB工程示例
 task-demo：后台任务工程示例  
 doc/apidoc：API接口开发示例文档  
 doc/db：示例工程mysql数据库  
+cloud：springcloud目录  
 
 开发工具：默认使用eclipse开发，也可以使用idea  
 构建工具：默认使用gradle，也可以使用maven  
