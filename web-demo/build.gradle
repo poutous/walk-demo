@@ -1,0 +1,137 @@
+apply plugin: "$release_mode"
+apply plugin: "eclipse"
+apply plugin: "org.springframework.boot"
+
+//编译器选项
+[compileJava, compileTestJava]*.options*.encoding = "UTF-8"
+
+//工程相关配置
+ext {
+	build = "build"
+	webapp = "src/main/webapp"
+	classes = "$webapp/WEB-INF/classes"
+	releasepath = "../release"
+}
+
+//发布版本号
+version="$release_version"
+
+//spring boot插件
+buildscript {
+    repositories {
+    	maven {url "$repoUrl"}
+    }
+    dependencies {
+    	//spring boot插件
+    	classpath ("org.walkframework:walk-boot-plugin:${walk_version}"){
+    		exclude module : "spring-boot-maven-plugin"
+    	}
+    }
+}
+
+//将webapp目录下jsp及其他文件拷贝到META-INF/resources下
+jar.into("META-INF/resources") {
+    from("$webapp")
+    exclude "WEB-INF"
+}
+
+//将compileOnlyjar包，如tomcat-embed-jasper等拷贝到BOOT-INF/lib下
+jar.into("BOOT-INF/lib"){
+    from { configurations.compileOnly.collect {it} }
+}
+
+//maven远程仓库
+repositories {
+	
+	//私服设置
+	maven {url "$repoUrl"}
+}
+
+//依赖管理
+dependencies {
+	//加载maven库依赖。格式：groupId:artifactId:version
+	//walk框架相关
+	compile "org.walkframework:walk-base:${walk_version}"
+	runtime "org.walkframework:walk-base:${walk_version}:walk-webapp@jar"
+	
+	//项目公用jar包
+	compile ("com.asiainfo.walk.common:biz-common:${biz_common_version}"){exclude group:"*"}
+	
+	//如果使用spring boot
+	compile ("org.walkframework:walk-boot:${walk_version}"){exclude group:"org.apache.tomcat.embed"}
+	compile "org.apache.tomcat.embed:tomcat-embed-core:${tomcat_version}"
+	compile "org.apache.tomcat.embed:tomcat-embed-el:${tomcat_version}"
+	compile "org.apache.tomcat.embed:tomcat-embed-websocket:${tomcat_version}"
+	compile "org.apache.tomcat.embed:tomcat-embed-logging-juli:${tomcat_version}"
+	compileOnly "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcat_version}"
+	
+	//jstl
+	runtime "javax.servlet:jstl:${jstl_version}"
+	
+	//logstash日志收集
+	compile "net.logstash.logback:logstash-logback-encoder:${logstash_version}"
+	
+	//数据库相关
+	//runtime "com.oracle:ojdbc6:${ojdbc_version}"
+	runtime "mysql:mysql-connector-java:${mysql_connector_java_version}"
+	
+	// 增加junit
+	compile "junit:junit:${junit_version}"
+	
+	//walk管理控制台相关
+	runtime "org.walkframework:walk-console:${walk_version}"
+	
+	//activiti相关，如首次使用需将application.properties文件中spring.activiti.database-schema-update设为true，以便初始化表
+//	compile "org.walkframework:walk-activiti:${walk_version}"
+	
+	//springcloud相关
+//	compile "org.springframework.cloud:spring-cloud-starter-alibaba-nacos-config:${alibaba_cloud_version}"
+//	compile "org.springframework.cloud:spring-cloud-starter-alibaba-nacos-discovery:${alibaba_cloud_version}"
+//	compile "org.springframework.cloud:spring-cloud-commons:${spring_cloud_commons_version}"
+//	compile "org.springframework.boot:spring-boot-starter-actuator"
+}
+
+//springcloud相关
+//dependencyManagement {
+//	imports {
+//		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${spring_cloud_version}"
+//	}
+//}
+
+
+//清理目录
+task cleanfiles << {
+	println project.name + " cleanfiles..."
+	
+	delete "bin"
+	delete "logs"
+	delete ".settings"
+	delete ".tmp"
+}
+
+//复制相关文件
+task copyfiles << {
+	
+	//1、复制省份配置
+	def provinceConfig = new File("src/$provinceName")
+	if (provinceConfig.exists()) {
+		println project.name + " copyfiles..."
+		copy{
+			from provinceConfig
+			into "src/main"
+		}
+	}
+}
+
+//发布jar/war包
+task release << {
+	println project.name + " release..."
+	
+	//复制war文件到发布目录
+	copy {
+		from "$build/libs"
+		into "$releasepath"
+		include "*.war"
+		include "*.jar"
+	}
+}

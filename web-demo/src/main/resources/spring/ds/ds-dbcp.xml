@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+	    xmlns:aop="http://www.springframework.org/schema/aop"
+		xmlns:tx="http://www.springframework.org/schema/tx"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd"
+	default-autowire="byName">
+	
+	<!-- JNDI方式获取数据源 -->
+	<bean id="ds_1" class="org.walkframework.base.system.jndi.JndiObjectFactoryBeanExt">
+	    <property name="jndiName" value="${walkbatis.defaultJndiName}"/>
+	</bean>
+	
+	<!-- Mybatis 设置缓存管理器 -->
+	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+		<property name="staticMethod" value="org.walkframework.batis.cache.CacheManager.setCacheManager" />
+		<property name="arguments" ref="springCacheManager" />
+	</bean>
+    
+    <!-- Mybatis's sqlSessionFactory -->
+    <bean id="sqlSessionFactory" class="org.walkframework.batis.spring.HotSqlSessionFactoryBean">
+    	<!-- 数据源 -->
+        <property name="dataSource" ref="ds_1"/>
+        <!-- mybatis配置文件路径 -->
+        <property name="configLocation" value="classpath:mybatis/mybatis-config.xml"/>
+        <!-- sql文件扫描路径 -->
+        <property name="sqlLocations" value="classpath*:${walkbatis.basePath}/**/*SQL.xml"/>
+        <!-- 是否开启热部署。开启后需将jpathwatch-0.95.jar包放到容器(tomcat/weblogic)lib目录中。下载地址：http://central.maven.org/maven2/net/sf/jpathwatch/jpathwatch/0.95/jpathwatch-0.95.jar-->
+        <property name="isHotDeploy" value="${walkbatis.isHotDeploy}"/>
+        <!-- 本地开发sql热部署目录-->
+        <property name="hotDeployLocations">
+            <set>
+                <value>${walkbatis.basePath}</value>
+            </set>
+        </property>
+    </bean>
+    
+    <!-- 基于mybatis sqlSession实现的通用dao工具 -->
+    <bean id="sqlSessionDao" class="org.walkframework.base.mvc.dao.BaseSqlSessionDao">
+        <constructor-arg name="sqlSessionFactory" ref="sqlSessionFactory"/>
+		<constructor-arg name="dialect" value="${walkbatis.dialectClassName}" />
+    </bean>
+    
+	<!-- Spring 事务管理器 -->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager"> 
+        <property name="dataSource" ref="ds_1"/> 
+    </bean> 
+	
+	<!-- 引入事务配置 -->
+	<beans:import resource="classpath:spring/ds/transaction.xml"/>
+	
+</beans>

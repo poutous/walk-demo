@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+	    xmlns:aop="http://www.springframework.org/schema/aop"
+		xmlns:mvc="http://www.springframework.org/schema/mvc"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd"
+	default-autowire="byName">
+	<!-- MVC配置 start********************************************************************************************************* -->
+	<!-- 自动搜索需要注入的类 -->
+	<context:component-scan base-package="org.walkframework.base.mvc.controller" />
+	<context:component-scan base-package="org.walkframework.base.system.exception.handler" />
+	<context:component-scan base-package="org.walkframework.console.mvc.controller" /><!-- 加载walk控制台 -->
+	<context:component-scan base-package="org.walkframework.activiti.mvc.controller" /><!-- 加载activiti -->
+	<context:component-scan base-package="com.asiainfo.walk.**.mvc.controller" />
+	
+	<!-- 启用Spring MVC 注解 -->
+    <context:annotation-config />
+	
+	<!-- 参数绑定一：添加最先想要匹配的参数类型解决器 -->
+    <bean id="requestMappingHandlerAdapter" class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+		<property name="synchronizeOnSession" value="true"/><!--线程安全的访问session-->
+		<property name="argumentResolvers"><!--配置最先想要匹配的参数类型解决器-->
+			<list>
+				<bean class="org.walkframework.base.system.bind.resolver.InParamMethodArgumentResolver"/>	<!--请求参数解决-->
+				<bean class="org.walkframework.base.system.bind.resolver.PaginationMethodArgumentResolver"/><!--分页参数解决-->
+			</list>
+		</property>
+		<property name="messageConverters">
+			<list>
+				<bean class="org.walkframework.base.system.converter.StringHttpMessageConverter"/><!-- 启用字符串转换功能，防止乱码 -->
+				<bean class="org.walkframework.base.system.converter.JsonHttpMessageConverter" /><!-- 返回值对象转json -->
+			</list>
+		</property>
+	</bean>
+	
+	<!-- 参数绑定二：调整适配器，添加默认参数解决器 -->
+    <bean class="org.walkframework.base.system.bind.RequestMappingHandlerAdapterAdjust">
+		<property name="requestMappingHandlerAdapter" ref="requestMappingHandlerAdapter"/>
+	</bean>
+	
+	<!-- 拦截器 -->
+	<mvc:interceptors>
+		<!-- 本地化拦截器 -->
+	    <bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
+	        <property name="paramName" value="language"/>
+	    </bean>
+	    
+	    <!-- 表单校验拦截器 -->
+	    <bean class="org.walkframework.base.system.interceptor.ValidXmlInterceptor"/>
+	    
+	    <!-- 数据导出拦截器 -->
+	    <bean class="org.walkframework.base.system.interceptor.DataExportInterceptor"/>
+	    
+	    <!-- 请求主机校验拦截器 -->
+	    <bean class="org.walkframework.base.system.interceptor.HostCheckInterceptor"/>
+	    
+	    <!-- 时间ticket检查拦截器-->
+	    <bean class="org.walkframework.base.system.interceptor.TimeTicketCheckInterceptor"/>
+	</mvc:interceptors>
+	
+	<!-- spring异步导出拦截器。通过AOP实现 -->
+	<bean id="asynExportInterceptor" class="org.walkframework.base.system.interceptor.AsynExportInterceptor"/>
+    <aop:config>
+        <aop:pointcut id="asynExportPointcut" expression="execution(* com.asiainfo.walk.*.mvc.controller.*.*.*(..)) and args(..)"/>
+        <aop:aspect ref="asynExportInterceptor">
+            <aop:around method="doAround" pointcut-ref="asynExportPointcut"/>
+        </aop:aspect>
+    </aop:config>
+	
+	<!-- 启用注解驱动，自动注册DefaultAnnotationHandlerMapping与AnnotationMethodHandlerAdapter，一定要放在requestMappingHandlerAdapter之后-->
+    <mvc:annotation-driven/>
+    
+	<!-- 对静态资源文件的访问配置 配合org.walkframework.base.system.filter.JspFilter 可访问pages目录下的静态资源，但不允许直接访问jsp-->
+	<mvc:resources mapping="/static/component/**" location="classpath:/META-INF/static/component/" cache-period="31556926"/>
+	<mvc:resources mapping="/static/**" location="/static/" cache-period="31556926"/>
+	
+	<!-- jsp视图解析器。视图查找顺序由order属性控制。先找ftl文件，再找jsp文件-->
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="viewClass" value="org.springframework.web.servlet.view.InternalResourceView"/>
+		<property name="prefix" value="/pages/"/>
+        <property name="suffix" value=".jsp"/>
+        <property name="order" value="1"/>
+	</bean>
+	
+	<!-- freeMarker视图解析器 -->
+    <bean class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
+        <property name="viewClass" value="org.springframework.web.servlet.view.freemarker.FreeMarkerView"/>
+        <property name="contentType" value="text/html; charset=UTF-8"/>
+        <property name="exposeRequestAttributes" value="true" />
+        <property name="exposeSessionAttributes" value="true" />
+        <property name="exposeSpringMacroHelpers" value="true" />
+        <property name="requestContextAttribute" value="request"/>
+        <property name="cache" value="true" />
+        <property name="suffix" value=".ftl" />
+        <property name="order" value="0"/>
+        <property name="attributesMap" ref="freemarkerStaticModels"/>
+    </bean>
+    
+    <!-- freemarker静态方法访问 -->
+    <bean id="freemarkerStaticModels" class="org.walkframework.base.system.freemarker.FreemarkerStaticModels">
+    	<property name="freemarkerConfigurer" ref="freemarkerConfigurer"/>
+		<property name="staticModels">
+			<map>
+	            <entry key="SecurityUtils" value="org.apache.shiro.SecurityUtils"/>
+	            <entry key="SystemUtil" value="org.walkframework.base.tools.utils.SystemUtil"/>
+	            <entry key="ParamTranslateUtil" value="org.walkframework.base.tools.utils.ParamTranslateUtil"/>
+	            <entry key="SpringPropertyHolder" value="org.walkframework.base.tools.spring.SpringPropertyHolder"/>
+	        </map>
+		</property>
+	</bean>
+	
+	<!-- freemarker配置 -->
+	<bean id="freemarkerConfigurer" class="org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer">
+	    <property name="templateLoaderPaths">
+	    	<list>
+	    		<value>classpath:/META-INF/ftls/</value>
+	    		<value>classpath:/ftls/</value>
+	    	</list>
+	    </property>
+	    <property name="freemarkerSettings">
+	        <props>
+	            <prop key="template_update_delay">0</prop>
+	            <prop key="default_encoding">UTF-8</prop>
+	            <prop key="number_format">0.##</prop>
+	            <prop key="datetime_format">yyyy-MM-dd HH:mm:ss</prop>
+	            <prop key="classic_compatible">true</prop>
+	            <prop key="template_exception_handler">ignore</prop>
+	        </props>
+	    </property>
+	    <property name="freemarkerVariables">
+	        <map>
+	            <entry key="xml_escape">
+	            	<bean class="freemarker.template.utility.XmlEscape" />
+	            </entry>
+	        </map>
+	    </property>
+	</bean>
+    
+	<!-- 文件上传-->
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<!--one of the properties available;the maximum upload size in bytes 100M-->
+        <property name="maxUploadSize" value="104857600"/>
+		<property name="defaultEncoding" value="utf-8" />
+		<property name="maxInMemorySize" value="4096"/>
+	</bean>
+	
+	<!-- MVC配置 end********************************************************************************************************* -->
+    
+	<!-- 安全框架Shiro Spring AOP权限注解 -->
+	<aop:config proxy-target-class="true"></aop:config>
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+		<property name="securityManager" ref="securityManager"/>
+	</bean>
+
+    <!-- Shiro生命周期处理器-->
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+</beans>

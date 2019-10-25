@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="ehcache.xsd">
+	<!-- 
+        磁盘存储:将缓存中暂时不使用的对象,转移到硬盘,类似于Windows系统的虚拟内存
+       path:指定在硬盘上存储对象的路径
+    -->
+	<diskStore path="user.home/.tmp" />
+	
+	<!-- 
+       defaultCache:默认的缓存配置信息,如果不加特殊说明,则所有对象按照此配置项处理
+       maxElementsInMemory:设置了缓存的上限,最多存储多少个记录对象
+       eternal:代表对象是否永不过期
+       timeToLiveSeconds:最大的存活时间
+       timeToIdleSeconds:最后一次访问截止后最大的存活时间
+       overflowToDisk:是否允许对象被写入到磁盘
+       diskPersistent:是否磁盘持久化
+    -->
+    
+	<!-- 缓存默认配置 -->
+	<defaultCache maxElementsInMemory="10000" eternal="false" timeToLiveSeconds="7200" overflowToDisk="true" diskPersistent="false" diskExpiryThreadIntervalSeconds="120" />
+	
+	<!-- cacheMonitor(ehcache缓存监控管理工具),默认每天2点重启监控监听。可指定几点执行(hour)、多少分执行(minute)、执行周期，毫秒为单位(period) start
+	<cacheManagerPeerListenerFactory properties="monitorAddress=127.0.0.1, monitorPort=9889, hour=2, minute=0, period=86400000" class="org.walkframework.cache.ehcache.probe.ProbePeerListenerFactoryExt" />
+	<cache name="CACHE_MONITOR_STAT" maxEntriesLocalHeap="1000" eternal="true" overflowToDisk="false" memoryStoreEvictionPolicy="FIFO" statistics="true"/>
+	-->
+	
+</ehcache>

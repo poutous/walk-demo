@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="UrlSQL">
+
+	<!-- 加载url权限 -->
+	<select id="loadUrlFiltersData" resultType="org.walkframework.data.util.DataMap">
+		SELECT A.MOD_CODE, A.MOD_NAME, B.RIGHT_CODE
+		  FROM TD_S_MODFILE A, TD_M_FUNCRIGHT B
+		 WHERE A.MOD_CODE = B.MOD_CODE
+		   AND B.USE_TAG = '1'
+		   AND B.RIGHT_ATTR = '3'
+		 ORDER BY A.MOD_CODE
+	</select>
+	
+</mapper>

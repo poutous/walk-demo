@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:task="http://www.springframework.org/schema/task"  
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.0.xsd"
+	default-autowire="byName">
+	
+	<!-- 定时导出任务分发器 -->
+	<bean id="timingExportDispenserTask" class="org.walkframework.base.system.task.export.TimingExportDispenserTask">
+		<property name="dao" ref="sqlSessionDao"/>						<!-- dao工具 -->
+		<property name="masterFactory" ref="masterFactory"/>			<!-- master工厂类 -->
+		<property name="maxRetryNums" value="3"/>						<!-- 最大重试次数 -->
+		<property name="expirySeconds" value="86400"/>					<!-- 过期时间，单位秒 -->
+	</bean>
+	
+    <!-- 定时任务列表 cron:[秒] [分钟] [小时] [日期] [月份] [星期] [年(可选)] -->
+    <task:scheduled-tasks>
+        
+        <!-- 定时导出任务，每10秒检查一次-->
+        <task:scheduled ref="timingExportDispenserTask" method="doTask" cron="*/10 * * * * ?" />
+        
+    </task:scheduled-tasks>
+</beans>

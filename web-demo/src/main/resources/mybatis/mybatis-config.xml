@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<!--属性设置-->
+	<properties>
+		<!-- 查询结果集最大限制。避免因sql写法有误或条件设置不合理导致查询出大量结果集造成的内存溢出 
+		<property name="maxLimitResultset" value="10000"/>
+		-->
+	</properties>
+	
+    <!-- 基础设置 -->
+    <settings>
+        <!-- 全局映射器启用缓存 -->
+        <setting name="cacheEnabled" value="false" />
+        <!-- 查询时，关闭关联对象即时加载以提高性能 -->
+        <setting name="lazyLoadingEnabled" value="true" />
+        <!-- 设置关联对象加载的形态，此处为按需加载字段(加载字段由SQL指 定)，不会加载关联表的所有字段，以提高性能 -->
+        <setting name="aggressiveLazyLoading" value="false" />
+        <!-- 对于未知的SQL查询，允许返回不同的结果集以达到通用的效果 -->
+        <setting name="multipleResultSetsEnabled" value="true" />
+        <!-- 允许使用列标签代替列名 -->
+        <setting name="useColumnLabel" value="true" />
+        <!-- 允许使用自定义的主键值(比如由程序生成的UUID 32位编码作为键值)，数据表的PK生成策略将被覆盖 -->
+        <setting name="useGeneratedKeys" value="true" />
+        <!-- 给予被嵌套的resultMap以字段-属性的映射支持 -->
+        <setting name="autoMappingBehavior" value="FULL" />
+        <!-- SIMPLE：默认；REUSE：批量更新操作缓存SQL以提高性能； BATCH：批量更新模式，提高更新效率，但获取不到影响行数。注意：REUSE和BATCH在使用oracle时容易报ORA-01000错-->
+        <setting name="defaultExecutorType" value="SIMPLE" />
+        <!-- 数据库超过600秒仍未响应则超时 -->
+        <setting name="defaultStatementTimeout" value="600" />
+        <!-- 设置但JDBC类型为空时,某些驱动程序 要指定值,default:OTHER -->
+        <setting name="jdbcTypeForNull" value="NULL" />
+    </settings>
+    
+	<!-- 类型处理 -->
+    <typeHandlers>
+    	<!--Start: oracle特有类型处理器注册。后续如还有其他类型不能正确处理，按此添加类型处理器即可。 
+        <typeHandler javaType="oracle.sql.CLOB" jdbcType="CLOB" handler="org.apache.ibatis.type.ClobTypeHandler" />
+        <typeHandler javaType="oracle.sql.BLOB" jdbcType="BLOB" handler="org.apache.ibatis.type.BlobTypeHandler" />
+        <typeHandler javaType="oracle.sql.NCLOB" jdbcType="NCLOB" handler="org.apache.ibatis.type.NClobTypeHandler" />
+        -->
+        <!--End: oracle特有类型处理器注册。后续如还有其他类型不能正确处理，按此添加类型处理器即可。 -->
+    </typeHandlers>
+	
+	<!-- 插件配置 -->
+    <plugins>
+    	<!-- walkbatis拦截器 -->
+        <plugin interceptor="org.walkframework.batis.plugins.WalkbatisPlugin" />
+    </plugins>
+    
+    <!-- SQL映射文件，在这只配jar包中的文件，工程sql文件通过Spring自动扫描进行加载-->
+    <mappers>
+        <mapper resource="batis/common/sql/EntitySQL.xml" />	<!-- walk-batis基础sql文件。该文件在walk-batis-*.jar中 -->
+        <mapper resource="base/common/sql/CommonSQL.xml" />		<!-- BaseSqlSessionDao实现需要的sql文件。该文件在walk-base-*.jar中 -->
+        <mapper resource="biz/common/UserSQL.xml" />			<!-- 业务通用sql。该文件在biz-common-*.jar中 -->
+    </mappers>
+</configuration>

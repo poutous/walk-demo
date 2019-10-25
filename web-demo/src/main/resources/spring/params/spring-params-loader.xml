@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+	    xmlns:aop="http://www.springframework.org/schema/aop"
+		xmlns:cache="http://www.springframework.org/schema/cache"
+		xmlns:util="http://www.springframework.org/schema/util"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+		http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache-4.0.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+	default-autowire="byName">
+	
+	<!-- 静态参数缓存加载器 -->
+    <bean id="staticParamDataLoader" class="org.walkframework.base.system.staticparam.StaticParamDataLoader">
+    	<!-- 缓存管理器 -->
+    	<property name="cacheManager" ref="springCacheManager"/>
+    	<!-- 是否每次启动时都加载。true：每次重新启动时都会强制重新加载。false：工程启动时，当发现本加载器已经加载过则放弃重新加载，但能否发现只有在redis环境下实现。 -->
+    	<property name="forceLoad" value="#{'${cache.params.forceLoad}'==''?('${cache.cacheDriver}'=='rediscache'?'false':'true'):'${cache.params.forceLoad}'}"/>
+    	<!-- 是否异步加载。true：开另外的线程进行加载，不影响工程启动速度 -->
+    	<property name="asynLoad" value="${cache.params.asynLoad}"/>
+    	<!-- 延迟加载秒数 -->
+    	<property name="delaySeconds" value="${cache.params.delaySeconds}"/>
+    	<!-- 是否启用自动刷新 -->
+    	<property name="autoRefresh" value="${cache.params.autoRefresh}"/>
+    	<!-- 自动刷新周期秒数 -->
+    	<property name="autoRefreshSeconds" value="${cache.params.autoRefreshSeconds}"/>
+    	<!-- 静态参数表配置文件列表 -->
+        <property name="staticParams">
+        	<util:list>
+        		<!-- 默认数据源静态参数表加载 -->
+        		<bean id="ds1_staticParamLoadManager" class="org.walkframework.base.system.staticparam.StaticParamLoadManager">
+			    	<property name="configLocation" value="spring/params/ds_1_params.xml"/><!-- 默认数据源静态参数表配置文件路径 -->
+			    	<property name="dao" ref="sqlSessionDao"/><!-- 默认数据源dao工具 -->
+			    </bean>
+			    <!-- 其他数据源静态参数表加载示例 
+				<bean id="ds2_staticParamLoadManager" class="org.walkframework.base.system.staticparam.StaticParamLoadManager">
+					<property name="configLocation" value="spring/params/ds_2_params.xml"/>数据源2静态参数表配置文件路径
+			    	<property name="dao" ref="sqlSessionDao2"/>数据源2dao工具
+			    </bean>
+				-->
+        	</util:list>
+		</property>
+    </bean>
+</beans>

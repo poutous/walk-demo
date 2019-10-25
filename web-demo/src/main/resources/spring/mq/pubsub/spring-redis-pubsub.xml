@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:util="http://www.springframework.org/schema/util"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+	default-autowire="byName">
+	
+	<!-- 引入redis -->
+	<beans:import resource="classpath:spring/mq/spring-redis-mq.xml"/>
+	
+	<!-- 基于Redis实现的订阅/发布管理器-->
+	<bean id="pubSubManager" class="org.walkframework.mq.pubsub.redis.RedisPubSubManager">
+		<property name="redisOperations" ref="mqRedisOperations"/>
+		<property name="container">
+			<bean class="org.springframework.data.redis.listener.RedisMessageListenerContainer" init-method="start">
+				<property name="connectionFactory" ref="mqJedisConnectionFactory"/>
+			</bean>
+		</property>
+	</bean>
+	
+	<!-- 发布器示例 
+	<bean id="examplePublisher" class="org.walkframework.mq.pubsub.Publisher">
+		<property name="pubSubManager" ref="pubSubManager"/>
+		<property name="channels">
+			<set>
+				<value>channel_example1</value>
+			</set>
+		</property>
+	</bean>
+	-->
+	<!-- 订阅器示例 
+	<bean id="exampleSubscriber" class="org.walkframework.mq.pubsub.Subscriber">
+		<property name="pubSubManager" ref="pubSubManager"/>
+		<property name="messageListener">
+			<bean class="com.asiainfo.walk.order.system.mq.ExampleMessageListener"/>
+		</property>
+		<property name="channels">
+			<set>
+				<value>channel_example1</value>
+			</set>
+		</property>
+	</bean>
+	-->
+</beans>

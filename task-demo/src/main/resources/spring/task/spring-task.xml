@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:task="http://www.springframework.org/schema/task"  
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.0.xsd"
+	default-autowire="byName">
+	
+	<!-- 自动搜索需要注入的类 -->
+	<context:component-scan base-package="com.asiainfo.walk.task.mvc.task" />
+	
+	<!-- master工厂类 -->
+	<bean id="masterFactory" class="org.walkframework.base.system.task.MasterFactory">
+		<property name="cluster" value="${task.cluster}"/>				<!-- 是否开启集群模式 -->
+		<property name="cacheManager" ref="springCacheManager"/>		<!-- 缓存管理器 -->
+		<property name="queueManagerName" value="queueManager"/>		<!-- 队列管理器 -->
+		<property name="pubSubManagerName" value="pubSubManager"/>		<!-- 发布订阅管理器 -->
+	</bean>
+	
+	<!-- 集群任务master健康检查器 -->
+	<bean id="masterHealthCheckTask" class="org.walkframework.base.system.task.MasterHealthCheckTask">
+		<property name="timeoutMillis" value="${task.timeoutMillis}"/>	<!-- 超时时间。 注意：设置的超时时间一定要大于执行周期时间-->
+		<property name="masterFactory" ref="masterFactory"/>			<!-- master工厂类 -->
+	</bean>
+	
+    <!-- 定时任务列表 cron:[秒] [分钟] [小时] [日期] [月份] [星期] [年(可选)] -->
+    <task:scheduled-tasks>
+    	<!-- 健康检查任务，集群任务使用，不可注释。执行周期：每秒执行一次 -->
+        <task:scheduled ref="masterHealthCheckTask" method="doCheck" cron="*/1 * * * * ?" />
+        
+    </task:scheduled-tasks>
+    
+    <!-- 引入通知任务-->
+    <beans:import resource="#{'${task.notify.import}'=='true'?'classpath:spring/task/common/spring-task-notify.xml':'classpath:base/common/spring/emptyfile.xml'}"/>
+    
+    <!-- 引入定时导出任务-->
+    <beans:import resource="#{'${task.timingexport.import}'=='true'?'classpath:spring/task/common/spring-task-timingexport.xml':'classpath:base/common/spring/emptyfile.xml'}"/>
+    
+    <!-- 引入demo定时任务-->
+    <beans:import resource="#{'${task.demo.import}'=='true'?'classpath:spring/task/demo/spring-task-demo.xml':'classpath:base/common/spring/emptyfile.xml'}"/>
+    
+</beans>

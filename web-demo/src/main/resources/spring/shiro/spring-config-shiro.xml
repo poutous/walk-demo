@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:aop="http://www.springframework.org/schema/aop"
+		xmlns:util="http://www.springframework.org/schema/util"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+	default-autowire="byName">
+
+	<!-- 缓存管理器 -->
+	<bean id="shiroCacheManager" class="org.walkframework.shiro.cache.ShiroCacheManager">
+		<property name="cacheManagerName" value="#{'${shiro.sharedSession}'=='true'?'${shiro.defaultSharedSessionCacheName}':'${cacheManagerName}'}" />
+	</bean>
+	
+	<!-- 默认的用户信息服务。需在工程的sql目录下定义UserSQL.xml文件，并按需实现用到的sql语句，如不满足需要可继承DefaultUserService类重写-->
+    <bean id="userService" class="org.walkframework.base.system.security.DefaultUserService">
+    	<property name="dao" ref="sqlSessionDao"/>
+    </bean>
+    
+	<!-- 基于普通登录的realm -->
+	<bean id="userRealm" class="com.asiainfo.walk.common.realm.UserRealm">
+		<property name="userService" ref="userService"/><!--注入用户信息服务 -->
+		<property name="cachingEnabled" value="true" /><!-- 认证信息与授权信息缓存开关 -->
+		<property name="authenticationCachingEnabled" value="false" /> <!-- 认证信息缓存，默认关闭 -->
+		<property name="authenticationCacheName" value="SHIRO_AUTHENTICATION_CACHE" /><!-- 认证信息缓存名 -->
+		<property name="authorizationCachingEnabled" value="true" /><!-- 授权信息缓存，默认开启 -->
+		<property name="authorizationCacheName" value="SHIRO_AUTHORIZATION_CACHE" /><!-- 授权信息缓存名 -->
+	</bean>
+	
+	<!-- 会话ID生成器 -->
+	<bean id="sessionIdGenerator" class="org.walkframework.shiro.session.BaseSessionIdGenerator">
+		<property name="sessionIdSalt" value="${shiro.sessionIdSalt}"/>
+	</bean>
+
+	<!-- 会话Cookie模板 -->
+	<bean id="sessionIdCookie" class="org.walkframework.shiro.web.servlet.SharedSessionCookie">
+		<property name="name" value="${shiro.cookieName}" />
+		<property name="sharedSession" value="${shiro.sharedSession}" />
+		<property name="sharedSessionCookiePath" value="${shiro.sharedSessionCookiePath}" />
+		<property name="httpOnly" value="${shiro.httpOnly}" />
+		<property name="secure" value="${shiro.secure}" />
+		<property name="maxAge" value="-1" />
+	</bean>
+
+	<!-- 会话DAO -->
+	<bean id="sessionDAO" class="org.walkframework.shiro.session.BaseSessionDAO">
+		<property name="activeSessionsCacheName" value="SHIRO_ACTIVE_SESSION_CACHE" />
+		<property name="sessionIdGenerator" ref="sessionIdGenerator" />
+	</bean>
+
+	<!-- 会话验证调度器 -->
+	<bean id="sessionValidationScheduler" class="org.apache.shiro.session.mgt.quartz.QuartzSessionValidationScheduler">
+		<property name="sessionValidationInterval" value="300000" /><!-- 会话检查调度器周期，单位毫秒 -->
+		<property name="sessionManager" ref="sessionManager" />
+	</bean>
+
+	<!-- 会话管理器 -->
+	<bean id="sessionManager" class="org.walkframework.shiro.web.session.mgt.ShiroWebSessionManager">
+		<property name="globalSessionTimeout" value="${sessionTimeout}" /><!-- 会话的全局过期时间（毫秒为单位），默认30分钟 -->
+		<property name="deleteInvalidSessions" value="true" />			 <!-- 删除无效/过期的会话 -->
+		<property name="sessionIdUrlRewritingEnabled" value="false" />	 <!-- 去除url中的jsessionid -->
+		<property name="sessionValidationSchedulerEnabled" value="true" /><!-- 开启会话调度器 -->
+		<property name="sessionValidationScheduler" ref="sessionValidationScheduler" />
+		<property name="sessionDAO" ref="sessionDAO" />
+		<property name="sessionIdCookieEnabled" value="true" />
+		<property name="sessionIdCookie" ref="sessionIdCookie" />
+	</bean>
+
+	<!-- 安全管理器 -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<property name="sessionManager" ref="sessionManager" />
+		<property name="cacheManager" ref="shiroCacheManager" />
+	</bean>
+
+	<!-- 设置安全管理器-->
+	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+		<property name="staticMethod" value="org.apache.shiro.SecurityUtils.setSecurityManager" />
+		<property name="arguments" ref="securityManager" />
+	</bean>
+	
+	<!-- 密码加密器 -->
+	<bean id="passwordEncryptor" class="org.walkframework.shiro.util.password.DefaultPasswordEncryptor"/>
+	
+	<!-- 基于表单登录的认证过滤器 -->
+	<bean id="formAuthFilter" class="org.walkframework.shiro.web.filter.authc.FormAuthFilter">
+        <property name="realm" ref="userRealm"/>					<!-- 基于普通登录的realm -->
+        <property name="loginUrl" value="/login/formlogin"/>		<!-- 登陆动作url -->
+        <property name="useSalt" value="false"/>					<!-- 是否使用盐值 -->
+        <property name="passwordEncryptor" ref="passwordEncryptor"/><!-- 密码加密器 -->
+    </bean>
+    
+    <!-- 基于CAS的登出过滤器 -->
+    <bean id="logoutFilter" class="org.walkframework.shiro.web.filter.authc.BaseLogoutFilter"/>
+    
+    <!-- 引入验证码校验配置 -->
+    <beans:import resource="classpath:spring/shiro/spring-jcaptcha.xml"/>
+    <!-- 验证码认证过滤器 -->
+    <bean id="jcaptchaFilter" class="org.walkframework.shiro.web.filter.jcaptcha.JcaptchaFilter">
+       <property name="jcaptchaImageCaptchaService" ref="jcaptchaImageCaptchaService"/>
+       <property name="jcaptchaEnabled" value="${verify.code.enabled}" />
+       <property name="onDeniedRedirectToLogin" value="true" />
+       <property name="failureKeyAttribute" value="shiroLoginFailure" />
+       <property name="loginUrl" value="${page.loginUrl}"/>
+    </bean>
+    
+    <!-- 认证过滤器路由。当访问非登录url时，可同时支持多种认证方式， -->
+    <bean id="routeAuthFilter" class="org.walkframework.shiro.web.filter.authc.RouteAuthFilter">
+		<property name="defaultAuthFilterName" value="#{'${shiro.defaultAuthFilter}'!=''?'${shiro.defaultAuthFilter}':'formAuthFilter'}"/>	<!-- 默认的认证过滤器。设置此项后，如果url中未定义认证路由参数或未在定义的认证过滤器列表中找到目标过滤器则使用本过滤器 -->
+        <property name="urlRouteParameterName" value="${shiro.urlRouteParameterName}"/>	<!-- url中的认证路由参数名称 -->
+    	<property name="securityManager" ref="securityManager"/>						<!-- 安全管理器 -->
+        <property name="filters"><!-- 认证过滤器列表 -->
+			<util:map>
+				<entry key="form" value-ref="formAuthFilter" />
+				<entry key="logout" value-ref="logoutFilter" />
+				<entry key="jcaptcha" value-ref="jcaptchaFilter" />
+			</util:map>
+		</property>
+		<property name="loginUrl" value="${page.loginUrl}"/><!-- 转向登陆页面url，普通登录方式会用到 -->
+    </bean>
+    
+    <!-- 过滤器链管理器 -->
+    <bean id="filterChainManager" class="org.walkframework.shiro.web.filter.mgt.DynamicDefaultFilterChainManager"/>
+    
+	<!-- Shiro的Web过滤器。支持url动态权限控制-->
+	<bean id="shiroFilter" class="org.walkframework.shiro.web.DynamicShiroFilterFactoryBean">
+		<property name="securityManager" ref="securityManager" />
+		<property name="filterChainManager" ref="filterChainManager" />
+		<property name="routeAuthFilter" ref="routeAuthFilter" />
+		<property name="routeAuthFilterName" value="routeAuth" />
+		<property name="unauthorizedUrl" value="/unauthorized"/>
+		<property name="filterChainDefinitions">
+			<value>
+				/static/** = anon
+				/special/apptest/** = anon
+				/special/jcaptcha = anon
+				/login = anon
+				/login/navlogin = anon
+				/login/formlogin = jcaptcha,form
+				/logout = logout
+				/** = routeAuth
+				/ = routeAuth
+			</value>
+		</property>
+	</bean>
+	
+	<!-- url权限动态管理器 -->
+	<bean id="dynamicChainManager" class="org.walkframework.shiro.chain.DynamicChainManager">
+		<property name="filterChainManager" ref="filterChainManager"/>
+	</bean>
+ 
+ 	<!-- 默认的URL权限加载器。需在工程的sql目录下定义UrlSQL.xml文件，并实现各sql语句，如不满足需要可继承DefaultUrlFilterLoader类重写-->
+    <bean id="urlFilterLoader" class="org.walkframework.base.system.security.DefaultUrlFilterLoader" init-method="loadUrlFiltersData">
+    	<property name="chainManager" ref="dynamicChainManager"/>
+    	<property name="dao" ref="sqlSessionDao"/>
+    </bean>
+	
+	<!-- Shiro Spring AOP权限注解 -->
+	<aop:config proxy-target-class="true"/>
+	<bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+		<property name="securityManager" ref="securityManager" />
+	</bean>
+    
+	<!-- Shiro生命周期处理器 -->
+	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
+</beans>

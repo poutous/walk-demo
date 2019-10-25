@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="UserSQL">
+
+	<!-- 查询APP拥有角色列表 -->
+	<select id="findRoles" resultType="java.lang.String">
+		SELECT A.RIGHT_CODE
+		  FROM V_APPFUNCRIGHT A
+		 WHERE A.RIGHT_ATTR = '1'
+		   AND A.APP_ID = #{_parameter}
+	</select>
+	
+	<!-- 查询APP拥有权限列表（数据权限） -->
+	<select id="findPermissions" resultType="java.lang.String">
+		SELECT A.RIGHT_CODE
+		  FROM V_APPFUNCRIGHT A
+		 WHERE A.RIGHT_ATTR = '0'
+		   AND A.APP_ID = #{_parameter}
+	</select>
+	
+	<!-- 查询APP -->
+	<select id="findUser" resultType="org.walkframework.base.mvc.entity.TdMAppCfg">
+		SELECT A.*
+		  FROM TD_M_APP_CFG A
+		 WHERE A.APP_ID = #{userId}
+	</select>
+</mapper>

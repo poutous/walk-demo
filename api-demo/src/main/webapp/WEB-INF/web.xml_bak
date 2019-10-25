@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+	<!-- Spring Boot不使用web.xml  -->
+	
+	<!-- Spring配置  -->
+	<context-param>
+	    <param-name>contextConfigLocation</param-name>
+	    <param-value>classpath:spring/spring-config.xml</param-value>
+	</context-param>
+	<context-param>
+	    <param-name>enhanceConfigLocation</param-name>
+	    <param-value>classpath:spring/spring-enhance.xml</param-value><!-- 类加强器配置文件路径，容器启动时最先加载。-->
+	</context-param>
+	<context-param>
+		<param-name>contextInitializerClasses</param-name>
+		<param-value>org.walkframework.base.system.initializer.WalkApplicationContextInitializer</param-value>
+	</context-param>
+	<context-param>
+		<param-name>contextClass</param-name>
+		<param-value>org.walkframework.base.system.initializer.WalkXmlWebApplicationContext</param-value>
+	</context-param>
+	<listener>
+	    <listener-class>org.walkframework.base.system.listener.WalkContextLoaderListener</listener-class>
+	</listener>
+
+	<!-- Spring MVC配置 -->
+	<servlet>
+		<servlet-name>springMVC</servlet-name>
+		<servlet-class>org.walkframework.base.system.servlet.WalkDispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:spring/spring-mvc.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>springMVC</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+	
+	<!-- 1、不允许直接访问pages目录下的jsp 直接跳转到404页面-->
+	<filter>
+		<filter-name>jspFilter</filter-name>
+		<filter-class>org.walkframework.base.system.filter.JspFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>jspFilter</filter-name>
+		<url-pattern>/pages/*</url-pattern>
+	</filter-mapping>
+	
+	<!-- 2、解决post请求中文乱码。get请求乱码解决办法：如果是tomcat的话需在server.xml第一个Connector中加入URIEncoding="UTF-8" -->
+	<filter>
+		<filter-name>encodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+		<init-param>
+			<param-name>forceEncoding</param-name>
+			<param-value>true</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>encodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<!-- 3、shiro 安全过滤器 -->
+	<filter>
+        <filter-name>shiroFilter</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+        <init-param>
+            <param-name>targetFilterLifecycle</param-name>
+            <param-value>true</param-value>
+        </init-param>
+    </filter>
+	<filter-mapping>
+        <filter-name>shiroFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+	
+	<!-- session有效期(分钟) -->
+	<session-config>
+		<session-timeout>30</session-timeout>
+	</session-config>
+	
+	<!--定义错误页面-->
+	<error-page>
+		<error-code>404</error-code>
+		<location>/pages/common/error/404.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>500</error-code>
+		<location>/pages/common/error/error.jsp</location>
+	</error-page>
+	
+	<!-- 首页 -->
+	<welcome-file-list>
+		<welcome-file>/pages/Index.jsp</welcome-file>
+	</welcome-file-list>
+
+</web-app>

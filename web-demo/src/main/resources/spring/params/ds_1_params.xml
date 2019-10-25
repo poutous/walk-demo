@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="gb2312"?>
+<application>
+	<!-- key：		 缓存名称，唯一，不可重复。单表建议用表名，多表关联起个不会重复的名字。sql为空时，表示单表，以key作为表名。	必填-->
+	<!-- primaryKey：主键。标识记录唯一的字段。 																		必填-->
+	<!-- condition： 单表使用，条件限定。此字段不为空时表示单表查询，默认以key作为表名。										选填-->
+	<!-- sqlId： 	 涉及到多表复杂查询时可自定义sql，在mybatis的sql文件里定义。											选填-->
+	<!-- load： 	 	 是否加载，默认true。																				选填-->
+	
+	<!-- ds_1数据库静态参数列表。如全部不加载可指定load="false"，该值默认为true -->
+	<StaticParams>
+		<!-- 加载TD_S_STATIC表。此表特殊，程序中有特殊处理 -->
+		<table key="TD_S_STATIC"/>
+		
+	</StaticParams>
+</application>

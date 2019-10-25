@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="OptionsSQL">
+<!-- 缓存 -->
+<cache type="org.walkframework.batis.cache.L2Cache">
+	<property name="cacheSeconds" value="28800"/>
+</cache>
+	<!-- 查询地市 -->
+	<select id="queryEparchyList" resultType="org.walkframework.data.util.DataMap">
+		SELECT T.AREA_CODE, T.AREA_NAME 
+		  FROM TD_M_AREA T 
+		 WHERE T.VALIDFLAG = '0'
+		   AND T.AREA_LEVEL = '20'
+		   <if test="_parameter != null and _parameter != ''">
+				AND T.AREA_CODE = #{relaIndustry}
+		   </if>
+		 ORDER BY T.ORDER_NO
+	</select>
+	
+	<!-- 查询区县 -->
+	<select id="queryCityList" resultType="org.walkframework.data.util.DataMap">
+		SELECT T.AREA_CODE, T.AREA_NAME 
+		  FROM TD_M_AREA T 
+		 WHERE T.VALIDFLAG = '0'
+		   AND T.PARENT_AREA_CODE = #{_parameter}
+		 ORDER BY T.ORDER_NO
+	</select>
+	
+	<!-- 部门树 -->
+	<select id="queryDepartList" resultType="org.walkframework.data.util.DataMap">
+	    SELECT T.DEPART_ID AS ID,
+		       T.DEPART_NAME AS TEXT,
+		       T.PARENT_DEPART_ID AS PID,
+		       CASE (SELECT COUNT(1) FROM TD_M_DEPART A WHERE A.PARENT_DEPART_ID = T.DEPART_ID AND A.VALIDFLAG = '0')
+		         WHEN 0 THEN 'opened'
+		         ELSE 'closed'
+		       END STATE
+		  FROM TD_M_DEPART T
+		 WHERE T.VALIDFLAG = '0'
+	 	<!-- 节点展开时：根据传入节点查询下级节点 -->
+	 	<if test="_parameter != null and _parameter != ''">
+			AND T.PARENT_DEPART_ID = #{_parameter}
+	 	</if>
+		 ORDER BY T.ORDER_NO
+	</select>
+	
+</mapper>

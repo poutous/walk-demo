@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+    <!-- 定义日志级别 -->
+    <springProperty scope="context" name="log.level" source="log.level"/>
+    
+    <!-- 定义日志文件名 -->
+    <springProperty scope="context" name="log.name" source="log.name"/>
+		
+    <!-- 定义日志文件存储路径-->
+    <springProperty scope="context" name="log.path" source="log.path"/>
+    
+    <!-- 定义环境-->
+    <springProperty scope="context" name="log.env" source="spring.profiles.active"/>
+
+    <!-- 定义日志文件名格式化-->
+    <property name="log.timeFormat" value="yyyy-MM-dd"/>
+
+    <!-- 定义日志文件的输出格式。%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符-->
+    <property name="log.pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n" />
+
+	<!-- 定义编码-->
+    <property name="log.charset" value="UTF-8" />
+    
+    <!-- 定义日志文件保留天数 -->
+    <property name="log.maxHistory" value="30"/>
+
+    <!-- 定义日志文件最大限制 
+    <property name="log.maxFileSize" value="10MB"/>
+	-->
+	
+    <!-- 控制台输出 -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${log.pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 按照每天生成日志文件 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    	<file>${log.path}/${log.name}.log</file>
+    	<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${log.level}</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <FileNamePattern>${log.path}/${log.name}.%d{${log.timeFormat}}.log</FileNamePattern>
+            <MaxHistory>${log.maxHistory}</MaxHistory>
+            <!--  
+            <TimeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <MaxFileSize>${log.maxFileSize}</MaxFileSize>
+            </TimeBasedFileNamingAndTriggeringPolicy>
+            -->
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${log.pattern}</pattern>
+            <charset>${log.charset}</charset>
+        </encoder>
+    </appender>
+
+    <!-- 按照每天生成日志文件。仅记录错误日志 -->
+    <appender name="FILE-ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    	<file>${log.path}/error/${log.name}_error.log</file>
+    	<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <FileNamePattern>${log.path}/error/${log.name}_error.%d{${log.timeFormat}}.log</FileNamePattern>
+            <MaxHistory>${log.maxHistory}</MaxHistory>
+            <!--  
+            <TimeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <MaxFileSize>${log.maxFileSize}</MaxFileSize>
+            </TimeBasedFileNamingAndTriggeringPolicy>
+            -->
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${log.pattern}</pattern>
+            <charset>${log.charset}</charset>
+        </encoder>
+    </appender>
+
+	<!-- logstash收集日志，输出到elasticsearch -->
+    <appender name="LOGSTASH-TCP" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+    	<!-- logstash服务地址，支持多个，逗号分隔 -->
+		<springProfile name="dev">
+	    	<destination>127.0.0.1</destination>
+		</springProfile>
+		<springProfile name="test">
+		    <destination>127.0.0.1</destination>
+		</springProfile>
+		<springProfile name="prod">
+		    <destination>127.0.0.1</destination>
+		</springProfile>
+	    <!-- 队列大小，提高吞吐量，数值为2的N次幂，默认8192，单位是B-->
+	    <writeBufferSize>1048576</writeBufferSize>
+	    <keepAliveDuration>5 minutes</keepAliveDuration> 
+	    <!-- 日志输出编码 -->
+	    <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+	        <providers>
+	            <timestamp>
+	                <timeZone>UTC</timeZone>
+	            </timestamp>
+	            <pattern>
+	                <pattern>
+	                    {
+	                    "source": "${log.name:-}",
+	                    "message": "%message",
+	                    "class": "%logger{40}",
+	                    "trace": "%X{X-B3-TraceId:-}",
+	                    "span": "%X{X-B3-SpanId:-}",
+	                    "exportable": "%X{X-Span-Export:-}",
+	                    "pid": "${PID:-}",
+	                    "thread": "%thread",
+	                    "env": "${log.env}",
+	                    "level": "%level",
+	                    "path": "${log.path}"
+	                    }
+	                </pattern>
+	            </pattern>
+	        </providers>
+	    </encoder>
+	</appender>
+	
+    <!-- 日志输出级别 -->
+    <root level="${log.level}">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
+        <appender-ref ref="FILE-ERROR"/>
+        
+        <!-- 测试、生产 -->
+        <springProfile name="test,prod">
+        	<appender-ref ref="LOGSTASH-TCP"/>
+        </springProfile>
+    </root>
+
+	<!-- 各组件的特殊设置 -->
+	<logger name="com.asiainfo.walk" level="${log.level}"/>
+    <logger name="org.walkframework" level="${log.level}"/>
+    <logger name="org.springframework" level="${log.level}"/>
+    <logger name="org.apache" level="${log.level}"/>
+    <logger name="org.jasig" level="${log.level}"/>
+    <logger name="com.alibaba" level="${log.level}"/>
+    <logger name="bitronix.tm" level="${log.level}"/>
+    <logger name="java.sql.Connection" level="${log.level}"/>
+    <logger name="java.sql.Statement" level="${log.level}"/>
+    <logger name="java.sql.PreparedStatement" level="${log.level}"/>
+    <logger name="java.sql.ResultSet" level="${log.level}"/>
+</configuration>

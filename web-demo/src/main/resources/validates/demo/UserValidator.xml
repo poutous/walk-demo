@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--表单校验
+	name: 数据映射名
+	desc: 表格列头描述
+	type: 表格列类型(1:String 2: NUMERIC 3:Datatime)
+	format: 表格列数据格式(如果是数字，格式为0.00,#.##类似数据格式形式，如果为时间，格式为yyyy-MM-dd类似形式)
+	nullable: 是否可为空option[yes|no]
+	equsize: 输入值的定长位数限制，如equsize="10"
+	minsize: 输入值的最小位数限制，如minsize="10"
+	maxsize: 输入值的最大位数限制，如maxsize="100"
+	maxvalue: 输入值的最大限制，如不能超过120：maxvalue="120"
+	minvalue: 输入值的最小限制，如不能小于0：minvalue="0"
+	regex: 利用正则表达式校验数据。注意：java里都是写两个反斜杠代表一个反斜杠，这里只写一个 。如regex="[EW]?[-]?\d+[°](\s?\d+[′](\s?\d+[″]))?"
+	regexdesc: 正则表达式格式说明  如regexdesc="ddd°mm′ss″"	 
+	datasrc: 如果想去TD_S_PARAM表校验，只写TYPE_ID即可，例如：datasrc="TOUCH_TYPE_ID"；如果想指定表校验，写法如下：TD_M_STAFF.STAFF_ID.STAFF_ID
+	method: 如果以上不满足校验，可在form上指定一个服务类方法，通过反射机制进行校验，例如method="exampleService.validateExample"
+	注意：datasrc和method只有开启服务端验证时才会生效。
+-->
+<form>
+	<element name="userName" desc="用户名称" type="1" nullable="no"/>
+	<element name="realName" desc="用户姓名" type="1" nullable="no"/>
+	<element name="sex" desc="性别" type="1" nullable="no"/>
+	<element name="userPid" desc="身份证号码" type="1" nullable="no"/>
+	<element name="serialNumber" desc="手机号码" type="1" nullable="no"/>
+</form>

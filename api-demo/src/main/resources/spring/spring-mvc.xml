@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+	    xmlns:aop="http://www.springframework.org/schema/aop"
+		xmlns:mvc="http://www.springframework.org/schema/mvc"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd"
+	default-autowire="byName">
+	<!-- 启用aop切面编程注解。 proxy-target-class属性值决定是基于接口的还是基于类的代理被创建。如果proxy-target-class 属性值被设置为true，那么基于类的代理将起作用（这时需要cglib库）。如果proxy-target-class属值被设置为false或者这个属性被省略，那么标准的JDK 基于接口的代理将起作用-->
+	<aop:aspectj-autoproxy proxy-target-class="true"/>
+	
+	<!-- MVC配置 start********************************************************************************************************* -->
+	<!-- 自动搜索需要注入的类 -->
+	<context:component-scan base-package="com.asiainfo.walk.**.mvc.controller" />
+	<context:component-scan base-package="org.walkframework.restful.controller" />
+	<context:component-scan base-package="org.walkframework.restful.exception" /><!-- 通用异常处理 -->
+	
+	<!-- 启用Spring MVC 注解 -->
+    <context:annotation-config />
+    
+    <!-- 应用测试 -->
+    <bean class="org.walkframework.base.mvc.controller.common.AppTestController"/>
+    
+    <!-- 自定义webBinder -->  
+    <bean id="customBinder" class="org.springframework.web.bind.support.ConfigurableWebBindingInitializer">
+        <property name="validator" ref="validator" />
+    </bean>
+    
+    <!-- 参数绑定一：添加最先想要匹配的参数类型解决器 -->
+    <bean id="requestMappingHandlerAdapter" class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+		<property name="synchronizeOnSession" value="true"/><!--线程安全的访问session-->
+		<property name="argumentResolvers"><!--配置最先想要匹配的参数类型解决器-->
+			<list>
+				<bean class="org.walkframework.base.system.bind.resolver.InParamMethodArgumentResolver"/>	<!--请求参数解决-->
+				<bean class="org.walkframework.base.system.bind.resolver.PaginationMethodArgumentResolver"/><!--分页参数解决-->
+			</list>
+		</property>
+		<property name="messageConverters">
+			<list>
+				<bean class="org.walkframework.base.system.converter.StringHttpMessageConverter"/><!-- 启用字符串转换功能，防止乱码 -->
+				<!--<bean class="org.walkframework.base.system.converter.JsonHttpMessageConverter" /> 返回值对象转json -->
+				<bean class="org.walkframework.restful.converter.CustomMappingJackson2HttpMessageConverter"/><!-- swagger使用的jackson -->
+			</list>
+		</property>
+		<property name="webBindingInitializer" ref="customBinder"/>
+	</bean>
+	
+	<!-- 参数绑定二：调整适配器，添加默认参数解决器 -->
+    <bean class="org.walkframework.base.system.bind.RequestMappingHandlerAdapterAdjust">
+		<property name="requestMappingHandlerAdapter" ref="requestMappingHandlerAdapter"/>
+	</bean>
+    
+    <!-- 拦截器 -->
+	<mvc:interceptors>
+		<!-- 本地化拦截器 -->
+	    <bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
+	        <property name="paramName" value="language"/>
+	    </bean>
+	    
+	    <!-- 请求主机校验拦截器-->
+	    <bean class="org.walkframework.base.system.interceptor.HostCheckInterceptor"/>
+	    
+	    <!-- 时间ticket检查拦截器-->
+	    <bean class="org.walkframework.base.system.interceptor.TimeTicketCheckInterceptor"/>
+	</mvc:interceptors>
+	
+	<!-- spring校验结果拦截器。通过AOP实现 -->
+	<bean id="validatorResultInterceptor" class="org.walkframework.restful.interceptor.ValidatorResultInterceptor"/>
+    <aop:config>
+        <aop:pointcut id="validatorResultPointcut" expression="execution(* com.asiainfo.walk.*.mvc.controller.*.*.*(..)) and args(..,bindingResult)"/>
+        <aop:aspect ref="validatorResultInterceptor">
+            <aop:around method="doAround" pointcut-ref="validatorResultPointcut"/>
+        </aop:aspect>
+    </aop:config>
+	
+	<!-- 启用注解驱动，自动注册DefaultAnnotationHandlerMapping与AnnotationMethodHandlerAdapter，一定要放在requestMappingHandlerAdapter之后-->
+    <mvc:annotation-driven validator="validator"/>
+    
+    <!-- bean校验器-->
+	<bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
+		<!-- 使用hibernate.validator -->
+	    <property name="providerClass" value="org.hibernate.validator.HibernateValidator"/>
+	    <!-- 国际化文件。如果不设置，默认使用classpath下ValidationMessages.properties -->
+	    <property name="validationMessageSource" ref="messageSource"/>
+	</bean>
+	
+	<!-- 对静态资源文件的访问配置 配合org.walkframework.base.system.filter.JspFilter 可访问pages目录下的静态资源，但不允许直接访问jsp-->
+	<mvc:resources mapping="/pages/**" location="/pages/" cache-period="31556926"/>
+    <mvc:resources mapping="/webjars/**" location="classpath:/META-INF/resources/webjars/"/>
+    <mvc:resources mapping="swagger-ui.html" location="classpath:/META-INF/resources/"/>
+	
+	<!-- springfox-swagger2 -->
+	<bean class="org.walkframework.restful.config.SwaggerConfig">
+		<property name="version" value="${intf.version}"/>
+		<property name="title" value="${intf.name}" />
+		<property name="pathRegex" value="/${intf.version}/.*" />
+	</bean>
+	
+	<!-- 对转向页面的路径解析 prefix：前缀 suffix：后缀 -->
+	<bean p:prefix="/pages/" p:suffix=".jsp" class="org.springframework.web.servlet.view.InternalResourceViewResolver"/>
+	
+	<!-- 文件上传-->
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<!--one of the properties available;the maximum upload size in bytes 100M-->
+        <property name="maxUploadSize" value="104857600"/>
+		<property name="defaultEncoding" value="utf-8" />
+		<property name="maxInMemorySize" value="4096"/>
+	</bean>
+	
+	<!-- MVC配置 end********************************************************************************************************* -->
+</beans>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:util="http://www.springframework.org/schema/util"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+	default-autowire="byName">
+	
+	<!-- 引入redis -->
+	<beans:import resource="classpath:spring/mq/spring-redis-mq.xml"/>
+	
+	<!-- 基于Redis实现的消息队列管理器。分布式队列，web应用重启不会清空队列，建议在生产使用-->
+	<bean id="queueManager" class="org.walkframework.mq.queue.redis.RedisQueueManager">
+		<property name="redisOperations" ref="mqRedisOperations" />
+	</bean>
+</beans>

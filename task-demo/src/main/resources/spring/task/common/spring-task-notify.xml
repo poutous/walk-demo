@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:task="http://www.springframework.org/schema/task"  
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.0.xsd"
+	default-autowire="byName">
+	
+	<!-- 系统通知任务 -->
+	<bean id="notifyTask" class="org.walkframework.base.system.task.NotifyTask" p:masterFactory-ref="masterFactory"/>
+	
+    <!-- 定时任务列表 cron:[秒] [分钟] [小时] [日期] [月份] [星期] [年(可选)] -->
+    <task:scheduled-tasks>
+        
+        <!-- 系统通知任务-->
+        <task:scheduled ref="notifyTask" method="doTask" cron="*/10 * * * * ?" />
+        
+    </task:scheduled-tasks>
+</beans>

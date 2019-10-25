@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:util="http://www.springframework.org/schema/util"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+	default-autowire="byName">
+	
+	<!-- 引入redis -->
+	<beans:import resource="classpath:spring/redis/redis-pool.xml"/>
+	
+	<!-- redis 连接工厂 -->
+	<bean id="sharedSessionCacheJedisConnectionFactory" class="org.walkframework.redis.BaseJedisConnectionFactory">
+		<property name="usePool" value="true"/>
+		<property name="poolConfig" ref="jedisPoolConfig"/>
+		<property name="hostName" value="${redis.sharedsession.host}"/>
+		<property name="port" value="${redis.sharedsession.port}"/>
+		<property name="password" value="${redis.password}"/>
+	</bean>
+	
+	<!-- redis 模板定义 -->
+	<bean id="sharedSessionCacheRedisOperations" class="org.springframework.data.redis.core.RedisTemplate">
+        <property name="connectionFactory" ref="sharedSessionCacheJedisConnectionFactory"/>
+        <!-- 序列化/反序列化解析器，默认是jdk自带的解析器，但性能比较低，待选择一个性能比较高的序列化工具在此指定即可
+        <property name="keySerializer" value="XX"/>
+        <property name="valueSerializer" value="XX"/>
+        <property name="hashKeySerializer" value="XX"/>
+        <property name="hashValueSerializer" value="XX"/>
+        -->
+	</bean>
+	
+	<!-- redis 缓存管理器。默认是动态缓存，如果名为cacheName的缓存不存在，调用redisCacheManager.getCache(cacheName)即会创建一个新的缓存。注意：如果定义了cacheNames，则会取消缓存的动态创建 -->
+	<bean id="sharedSessionSpringCacheManager" class="org.walkframework.cache.redis.RedisCacheManagerDecorator">
+		<property name="cacheManager">
+			<bean class="org.walkframework.cache.redis.ext.CustomRedisCacheManager">
+				<constructor-arg index="0" ref="sharedSessionCacheRedisOperations"/>
+				<property name="usePrefix" value="${redis.sharedsession.usePrefix}"/>
+				<property name="loadRemoteCachesOnStartup" value="${redis.sharedsession.loadRemoteCachesOnStartup}"/>
+				<property name="cachePrefix">
+					<bean class="org.walkframework.cache.redis.ext.CustomRedisCachePrefix">
+						<constructor-arg name="delimiter" value="${redis.sharedsession.delimiter}"/>
+					</bean>
+				</property>
+				<!-- 默认缓存过期时间 -->
+				<property name="defaultExpiration" value="${redis.sharedsession.defaultExpiration}"/>
+				<!-- 设置某些特殊缓存的过期时间 
+				<property name="expires"> 
+					<map> 
+						<entry key="SHIRO_ACTIVE_SESSION_CACHE" value="${sessionTimeout}"/>
+					</map>
+				</property>
+				-->
+			</bean>
+		</property>
+	</bean>
+</beans>

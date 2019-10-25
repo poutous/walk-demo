@@ -1,0 +1,26 @@
+##Spring Cloud相关配置#####################################################
+#应用名称
+spring.application.name=obs-web
+#环境设置
+spring.profiles.active=dev
+
+#默认访问端口及路径
+server.port=35202
+server.context-path=/obsweb
+server.tomcat.basedir=bin/.tmp/tomcat
+
+#配置中心：使用阿里巴巴nacos
+spring.cloud.nacos.config.server-addr=127.0.0.1:8848
+#命名空间：需在nacos控制台生成
+spring.cloud.nacos.config.namespace=a2ceabaa-eaeb-4ec9-8917-0b03de1b4850
+#注册中心：使用阿里巴巴nacos
+spring.cloud.nacos.discovery.server-addr=${spring.cloud.nacos.config.server-addr}
+spring.cloud.nacos.discovery.namespace=${spring.cloud.nacos.config.namespace}
+
+#actuator关闭刷新安全认证
+management.security.enabled=false
+
+#日志设置
+log.level=INFO
+log.name=obsweb
+log.path=logs/${log.name}

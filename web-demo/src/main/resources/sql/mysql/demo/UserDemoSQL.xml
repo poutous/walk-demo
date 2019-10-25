@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="UserDemoSQL">
+
+	<!-- 查询用户列表-->
+	<select id="queryUserList" resultType="com.asiainfo.walk.webdemo.mvc.entity.ext.TdMUserExt">
+		SELECT A.*
+		  FROM TD_M_USER A
+		<where>
+			<if test="userId != null and userId != ''">
+				AND A.USER_ID = #{userId}
+			</if>
+			<if test="userName != null and userName != ''">
+				AND A.USER_NAME = #{userName}
+			</if>
+			<if test="realName != null and realName != ''">
+				AND A.REAL_NAME LIKE concat('%', #{realName}, '%')
+			</if>
+			<if test="sex != null and sex != ''">
+				AND A.SEX = #{sex}
+			</if>
+			<if test="email != null and email != ''">
+				AND A.EMAIL = #{email}
+			</if>
+			<if test="userPid != null and userPid != ''">
+				AND A.USER_PID = #{userPid}
+			</if>
+			<if test="serialNumber != null and serialNumber != ''">
+				AND A.SERIAL_NUMBER = #{serialNumber}
+			</if>
+			<if test="userState != null and userState != ''">
+				AND A.USER_STATE = #{userState}
+			</if>
+			<if test="eparchyCode != null and eparchyCode != ''">
+				AND A.EPARCHY_CODE = #{eparchyCode}
+			</if>
+			<if test="cityCode != null and cityCode != ''">
+				AND A.CITY_CODE = #{cityCode}
+			</if>
+			<if test="provinceCode != null and provinceCode != ''">
+				AND A.PROVINCE_CODE = #{provinceCode}
+			</if>
+			<if test="validFlag != null and validFlag != ''">
+				AND A.VALID_FLAG = #{validFlag}
+			</if>
+		</where>
+	</select>
+</mapper>

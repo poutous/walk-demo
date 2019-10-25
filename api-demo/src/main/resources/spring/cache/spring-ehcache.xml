@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:util="http://www.springframework.org/schema/util"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+	default-autowire="byName">
+	
+    <!-- ehCacheManager工厂类，指定ehcache.xml文件位置 -->
+    <bean id="ehCacheManagerFactory" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean" p:config-location="classpath:/spring/cache/ehcache.xml" />
+    
+    <!-- 声明ehCacheManager -->
+    <bean id="springCacheManager" class="org.walkframework.cache.ehcache.EhCacheCacheManagerDecorator">
+    	<property name="cacheManager">
+    		<bean class="org.springframework.cache.ehcache.EhCacheCacheManager" p:cache-manager-ref="ehCacheManagerFactory"/>
+    	</property>
+    </bean>
+    
+    <!-- 启用缓存注解驱动 
+    <cache:annotation-driven cache-manager="springCacheManager"/>
+    -->
+    
+    <!-- 由于需要自定义缓存注解语法分析器，以下配置替代缓存注解驱动形式配置(cache:annotation-driven) -->
+    <!-- 缓存注解语法分析器。自定义 -->
+    <bean id="springCacheAnnotationParser" class="org.walkframework.cache.annotation.CustomSpringCacheAnnotationParser"/>
+    
+    <!-- 缓存注解操作源 -->
+    <bean id="annotationCacheOperationSource" class="org.springframework.cache.annotation.AnnotationCacheOperationSource">
+    	<constructor-arg name="annotationParser" ref="springCacheAnnotationParser"/>
+    </bean>
+	
+	<!-- 缓存key生成器。自定义 -->
+    <bean id="keyGenerator" class="org.walkframework.cache.annotation.CustomSimpleKeyGenerator"/>
+    
+    <!-- 缓存拦截器 -->
+	<bean id="cacheInterceptor" class="org.walkframework.cache.annotation.CustomCacheInterceptor" p:cacheOperationSources-ref="annotationCacheOperationSource" p:cacheManager-ref="springCacheManager" p:keyGenerator-ref="keyGenerator" />
+
+	<!-- 缓存拦截器 -->
+	<bean id="beanFactoryCacheOperationSourceAdvisor" class="org.springframework.cache.interceptor.BeanFactoryCacheOperationSourceAdvisor" p:adviceBeanName="cacheInterceptor" p:cacheOperationSource-ref="annotationCacheOperationSource" />
+    
+</beans>
