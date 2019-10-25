@@ -1,4 +1,4 @@
-# walk-demo：walk框架示例工程  
+# walk框架示例工程  
 目录说明：  
 api-demo：API服务工程示例  
 web-demo：前端WEB工程示例  
