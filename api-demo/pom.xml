@@ -10,7 +10,7 @@
     
     <!-- 声明变量 下面可以引用 相当于常量 -->  
     <properties>
-    	<repo_url>http://120.27.1.10:8081/nexus/content/groups/public</repo_url>
+    	<repo_url>http://nexus.walkframework.org:8081/nexus/content/groups/public</repo_url>
     	<build_jdk>1.7</build_jdk>
         <walk_version>2.1.9</walk_version> 
         <ojdbc_version>11.2.0.1.0</ojdbc_version>
