@@ -17,7 +17,7 @@ public abstract class DbToEntity {
 		appConfig.setDbpassword("Walk@2018");
 		
 		String packageName = "com.asiainfo.walk.apidemo.mvc.entity";
-		String packagePath = "D:\\Workspace\\HLJ_WW\\obilling\\code\\branches\\develop\\obs\\obs-api\\src\\main\\java\\com\\asiainfo\\walk\\apidemo\\mvc\\entity";
+		String packagePath = "D:\\Workspace\\github\\walk-demo\\api-demo\\src\\main\\java\\com\\asiainfo\\walk\\apidemo\\mvc\\entity";
 
 		String[][] tables = new String[][] {
 			new String[] {"TD_M_USER", packageName, packagePath},
