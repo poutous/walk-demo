@@ -12,9 +12,9 @@ public abstract class DbToEntity {
     public static void main(String[] args) throws Exception {
     	CreateBeanConfig appConfig = new CreateBeanConfig();
     	appConfig.setDriverClassName("com.mysql.jdbc.Driver");
-		appConfig.setDburl("jdbc:mysql://127.0.0.1:3306/obillingdb?useUnicode=true&amp;characterEncoding=utf-8");
-		appConfig.setDbusername("obilling");
-		appConfig.setDbpassword("123456");
+		appConfig.setDburl("jdbc:mysql://127.0.0.1:3306/walkdemodb?useUnicode=true&amp;characterEncoding=utf-8");
+		appConfig.setDbusername("walkdemo");
+		appConfig.setDbpassword("Walk@2018");
 		
 		String packageName = "com.asiainfo.walk.apidemo.mvc.entity";
 		String packagePath = "D:\\Workspace\\HLJ_WW\\obilling\\code\\branches\\develop\\obs\\obs-api\\src\\main\\java\\com\\asiainfo\\walk\\apidemo\\mvc\\entity";

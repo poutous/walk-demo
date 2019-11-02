@@ -29,10 +29,9 @@ public abstract class DbToInterfaceDoc {
 	 */
 	private static CreateBeanConfig createBeanConfig() {
 		CreateBeanConfig appConfig = new CreateBeanConfig();
-		appConfig.setDriverClassName("com.mysql.jdbc.Driver");
-		appConfig.setDburl("jdbc:mysql://127.0.0.1:3306/obilling?useUnicode=true&amp;characterEncoding=utf-8");
-		appConfig.setDbusername("obilling");
-		appConfig.setDbpassword("123456");
+		appConfig.setDburl("jdbc:mysql://127.0.0.1:3306/walkdemodb?useUnicode=true&amp;characterEncoding=utf-8");
+		appConfig.setDbusername("walkdemo");
+		appConfig.setDbpassword("Walk@2018");
 		return appConfig;
 	}
 

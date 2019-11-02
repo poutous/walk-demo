@@ -41,9 +41,9 @@ public class RestfulGenerator {
 		// 4、设置属性翻译器包名
 		config.setTranslatorPackageName("com.asiainfo.walk.apidemo.mvc.service.user.translator");
 		// 5、设置Excel文档目录
-		config.setExcelFileDir("D:/Workspace/HLJ_WW/obilling/doc/apidoc");
+		config.setExcelFileDir("D:/Workspace/github/walk-demo/doc/apidoc");
 		// 6、设置生成的.java文件存放目录位置
-		config.setCodeDirPath("D:/Workspace/HLJ_WW/obilling/doc/gen");
+		config.setCodeDirPath("D:/Workspace/github/walk-demo/doc/gen");
 		// 7、执行...
 		JavaFileBuilder.newInstance().builder(config);
 		// 8、打开生成好的代码文件目录
